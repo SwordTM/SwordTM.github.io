@@ -1,0 +1,71 @@
+---
+import 'katex/dist/katex.min.css';
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { site } from '../../site.config';
+import { getPosts, formatDate } from '../../lib/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const toc = post.data.toc ? headings.filter((h) => h.depth === 2 || h.depth === 3) : [];
+---
+
+<Base title={post.data.title} description={post.data.description}>
+  <article class="post">
+    <header class="post-header">
+      <h1>{post.data.title}</h1>
+      <p class="meta">
+        <span>{site.author}</span>
+        <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+        {post.data.draft && <span class="draft">Draft</span>}
+      </p>
+    </header>
+
+    {
+      toc.length > 2 && (
+        <nav class="toc" aria-label="Table of contents">
+          <ul>
+            {toc.map((h) => (
+              <li class={`d${h.depth}`}>
+                <a href={`#${h.slug}`}>{h.text}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+
+    <div class="prose"><Content /></div>
+  </article>
+</Base>
+
+<script>
+  // "#" permalink next to each section heading.
+  document.querySelectorAll<HTMLElement>('.prose h2[id], .prose h3[id]').forEach((h) => {
+    const a = document.createElement('a');
+    a.href = `#${h.id}`;
+    a.className = 'anchor';
+    a.textContent = '#';
+    a.setAttribute('aria-label', 'Link to this section');
+    h.append(a);
+  });
+
+  // Highlight the section being read in the side table of contents.
+  const links = new Map<string, HTMLElement>();
+  document.querySelectorAll<HTMLAnchorElement>('.toc a').forEach((a) => links.set(decodeURIComponent(a.hash.slice(1)), a));
+  if (links.size) {
+    const heads = [...document.querySelectorAll<HTMLElement>('.prose h2[id], .prose h3[id]')];
+    const update = () => {
+      let current = heads[0];
+      for (const h of heads) if (h.getBoundingClientRect().top < 120) current = h;
+      links.forEach((a, id) => a.classList.toggle('active', id === current?.id));
+    };
+    addEventListener('scroll', update, { passive: true });
+    update();
+  }
+</script>

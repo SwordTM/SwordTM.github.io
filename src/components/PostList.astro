@@ -1,0 +1,31 @@
+---
+// A titled list of posts, grouped by year (the year is printed once per group).
+interface Item {
+  title: string;
+  href: string;
+  year?: number;
+  note?: string;
+}
+interface Props {
+  title?: string;
+  items: Item[];
+}
+const { title, items } = Astro.props;
+---
+
+<section class="post-list">
+  {title && <h2>{title}</h2>}
+  <ul>
+    {
+      items.map((item, i) => (
+        <li data-title={item.title.toLowerCase()}>
+          <span class="year">{item.year && item.year !== items[i - 1]?.year ? item.year : ''}</span>
+          <span>
+            <a href={item.href}>{item.title}</a>
+            {item.note && <span class="note"> — {item.note}</span>}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</section>

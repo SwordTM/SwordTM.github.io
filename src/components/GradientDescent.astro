@@ -1,0 +1,105 @@
+---
+// Example interactive figure: gradient descent on a 1-D non-convex loss.
+// Use it as a template for your own canvas figures in .mdx posts.
+interface Props {
+  caption?: string;
+}
+const { caption } = Astro.props;
+---
+
+<div class="figure gd-figure">
+  <canvas height="260"></canvas>
+  <div class="controls">
+    <label>
+      learning rate
+      <input type="range" min="0.01" max="0.7" step="0.01" value="0.1" />
+      <output>0.10</output>
+    </label>
+    <button type="button" data-act="step">Step</button>
+    <button type="button" data-act="run">Run</button>
+    <button type="button" data-act="reset">Reset</button>
+    <span class="readout"></span>
+  </div>
+  {caption && <p class="caption">{caption}</p>}
+</div>
+
+<script>
+  const f = (x: number) => x ** 4 / 4 - x ** 2 + 0.3 * x;
+  const df = (x: number) => x ** 3 - 2 * x + 0.3;
+  const X0 = 2.1, XMIN = -2.3, XMAX = 2.3, YMIN = -1.6, YMAX = 1.6;
+
+  document.querySelectorAll<HTMLElement>('.gd-figure').forEach((root) => {
+    const canvas = root.querySelector('canvas')!;
+    const ctx = canvas.getContext('2d')!;
+    const slider = root.querySelector<HTMLInputElement>('input[type=range]')!;
+    const out = root.querySelector('output')!;
+    const readout = root.querySelector('.readout')!;
+    const runBtn = root.querySelector<HTMLButtonElement>('[data-act=run]')!;
+    let path = [X0];
+    let timer: number | undefined;
+
+    const draw = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const css = getComputedStyle(root);
+      const fg = css.getPropertyValue('--fg'), faint = css.getPropertyValue('--faint'), accent = css.getPropertyValue('--accent');
+      const px = (x: number) => ((x - XMIN) / (XMAX - XMIN)) * w;
+      const py = (y: number) => h - ((y - YMIN) / (YMAX - YMIN)) * h;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i <= w; i += 2) {
+        const x = XMIN + (i / w) * (XMAX - XMIN);
+        i ? ctx.lineTo(i, py(f(x))) : ctx.moveTo(i, py(f(x)));
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = faint;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      path.forEach((x, i) => (i ? ctx.lineTo(px(x), py(f(x))) : ctx.moveTo(px(x), py(f(x)))));
+      ctx.stroke();
+      path.forEach((x, i) => {
+        const last = i === path.length - 1;
+        ctx.fillStyle = last ? accent : faint;
+        ctx.beginPath();
+        ctx.arc(px(x), py(f(x)), last ? 5 : 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      const x = path[path.length - 1];
+      readout.textContent = `step ${path.length - 1} · x = ${x.toFixed(3)} · loss = ${f(x).toFixed(3)}`;
+    };
+
+    const step = () => {
+      const x = path[path.length - 1];
+      const next = Math.max(XMIN, Math.min(XMAX, x - Number(slider.value) * df(x)));
+      path.push(next);
+      draw();
+      return Math.abs(next - x) > 1e-4 && path.length < 200;
+    };
+    const stop = () => {
+      clearInterval(timer);
+      timer = undefined;
+      runBtn.textContent = 'Run';
+    };
+
+    root.querySelector('[data-act=step]')!.addEventListener('click', () => { stop(); step(); });
+    root.querySelector('[data-act=reset]')!.addEventListener('click', () => { stop(); path = [X0]; draw(); });
+    runBtn.addEventListener('click', () => {
+      if (timer) return stop();
+      runBtn.textContent = 'Pause';
+      timer = window.setInterval(() => { if (!step()) stop(); }, 120);
+    });
+    slider.addEventListener('input', () => { out.textContent = Number(slider.value).toFixed(2); });
+
+    addEventListener('resize', draw);
+    document.addEventListener('themechange', draw);
+    draw();
+  });
+</script>

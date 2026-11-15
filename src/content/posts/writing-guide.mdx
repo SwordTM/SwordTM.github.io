@@ -1,0 +1,68 @@
+---
+title: 'A Template Post: Math, Code, Tables, and Interactive Figures'
+date: 2026-11-15
+description: Everything a post on this site can contain, in one place.
+categories: ['Notes']
+featured: true
+---
+
+import GradientDescent from '../../components/GradientDescent.astro';
+
+This is a sample post that shows what the site can render. Copy it when you start a new write-up, then delete it once you have real posts. It uses gradient descent as a running example.[^1]
+
+<GradientDescent caption="Gradient descent on a non-convex loss. Try a learning rate above 0.5 to watch it overshoot." />
+
+## Math
+
+Inline math goes between single dollar signs, like $\theta \in \mathbb{R}^d$. Display math goes between double dollar signs. The gradient descent update with learning rate $\eta$ is
+
+$$
+\theta_{t+1} = \theta_t - \eta \, \nabla_\theta \mathcal{L}(\theta_t)
+$$
+
+The figure above minimises $\mathcal{L}(x) = \tfrac{1}{4}x^4 - x^2 + 0.3x$, which has two minima. Which one you land in depends on where you start and how large $\eta$ is.
+
+## Code
+
+Fenced code blocks are syntax-highlighted in both themes:
+
+```python
+def gradient_descent(grad, x0, lr=0.1, steps=100):
+    x = x0
+    for _ in range(steps):
+        x = x - lr * grad(x)
+    return x
+
+grad = lambda x: x**3 - 2 * x + 0.3
+print(gradient_descent(grad, x0=2.1))  # ≈ 1.33
+```
+
+Inline code looks like `lr=0.1`.
+
+## Tables
+
+| Learning rate | Steps to converge | Final loss |
+| ------------- | ----------------- | ---------- |
+| 0.05          | 61                | −0.588     |
+| 0.10          | 29                | −0.588     |
+| 0.30          | 9                 | −0.588     |
+
+The step counts are illustrative, not measured.
+
+### Subsections
+
+Third-level headings show up indented in the table of contents, which appears beside the post on wide screens.
+
+## Images and quotes
+
+Put images in `public/images/` and reference them as `![alt text](/images/name.png)`.
+
+> Block quotes are for quoting a paper or a person.
+
+## Writing a new post
+
+1. Add a file to `src/content/posts/`. The file name becomes the URL.
+2. Use `.md` for plain posts and `.mdx` when you want to embed a component like the figure above.
+3. Set `draft: true` in the frontmatter to keep it out of the published site while you work on it.
+
+[^1]: Footnotes work too. They collect at the bottom of the post and link back to where they were cited.
