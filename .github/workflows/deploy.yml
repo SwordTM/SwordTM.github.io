@@ -23,7 +23,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # `npm install` rather than `npm ci`: a lockfile written on Windows leaves out
+      # Linux-only optional packages, which makes `npm ci` fail here.
+      - run: npm install --no-audit --no-fund
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
