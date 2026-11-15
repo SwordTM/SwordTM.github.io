@@ -1,0 +1,151 @@
+---
+// Home page mark: four small glasses pour coloured liquid into one glass,
+// the layers are swirled together, and the result turns gold.
+// Plays once on load; click it to replay. Colours and timings are at the top of the script.
+---
+
+<svg
+  class="mark"
+  viewBox="30 10 140 140"
+  width="150"
+  height="150"
+  role="img"
+  aria-label="Four glasses pour coloured liquids into one glass, which mixes into gold"
+  style="cursor: pointer"
+>
+  <title>Click to replay</title>
+  <defs>
+    <radialGradient id="mark-glow">
+      <stop offset="0" stop-color="#f2c14e" stop-opacity="1"></stop>
+      <stop offset="1" stop-color="#f2c14e" stop-opacity="0"></stop>
+    </radialGradient>
+    <clipPath id="mark-clip-main"><polygon points="75.5,70 81.3,138.5 118.7,138.5 124.5,70"></polygon></clipPath>
+    <clipPath id="mark-clip-pour"><polygon points="-19,0 -16.3,25 -3.7,25 -1,0"></polygon></clipPath>
+  </defs>
+
+  <circle class="glow" cx="100" cy="108" r="52" fill="url(#mark-glow)" opacity="0"></circle>
+
+  <line class="stream" x1="0" y1="0" x2="0" y2="0" stroke-width="2.6" stroke-linecap="round" opacity="0"></line>
+
+  <g class="main">
+    <g clip-path="url(#mark-clip-main)">
+      <rect class="layer" x="70" width="60" y="138.5" height="0"></rect>
+      <rect class="layer" x="70" width="60" y="138.5" height="0"></rect>
+      <rect class="layer" x="70" width="60" y="138.5" height="0"></rect>
+      <rect class="layer" x="70" width="60" y="138.5" height="0"></rect>
+    </g>
+    <path d="M74,70 L80,140 L120,140 L126,70" fill="currentColor" fill-opacity="0.04" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path>
+  </g>
+
+  <g class="pourer" opacity="0">
+    <g clip-path="url(#mark-clip-pour)">
+      <g class="pour-level"><rect class="pour-liquid" x="-60" y="2.5" width="120" height="80"></rect></g>
+    </g>
+    <path d="M-20,0 L-17,26 L-3,26 L0,0" fill="currentColor" fill-opacity="0.04" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"></path>
+  </g>
+
+  <g class="sparkles" fill="#f2c14e">
+    <path class="sparkle" data-x="70" data-y="60" d="M0,-5 L1.2,-1.2 L5,0 L1.2,1.2 L0,5 L-1.2,1.2 L-5,0 L-1.2,-1.2Z" opacity="0"></path>
+    <path class="sparkle" data-x="132" data-y="82" d="M0,-5 L1.2,-1.2 L5,0 L1.2,1.2 L0,5 L-1.2,1.2 L-5,0 L-1.2,-1.2Z" opacity="0"></path>
+    <path class="sparkle" data-x="119" data-y="54" d="M0,-5 L1.2,-1.2 L5,0 L1.2,1.2 L0,5 L-1.2,1.2 L-5,0 L-1.2,-1.2Z" opacity="0"></path>
+  </g>
+</svg>
+
+<script>
+  const COLORS = ['#e5484d', '#3e63dd', '#30a46c', '#8e4ec6']; // one per pour, bottom layer first
+  const GOLD = '#f2c14e';
+  const POUR = 2200; // ms per glass
+  const MIX = 1900; // ms of swirling
+  const END = 1300; // ms of glow + sparkles
+  const TOTAL = COLORS.length * POUR + MIX + END;
+
+  const FLOOR = 138.5; // inside bottom of the big glass
+  const LAYER = 13.5; // height each pour adds
+  const PIVOT_Y = 48; // height of the pouring lip
+
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+  const ease = (v: number) => v * v * (3 - 2 * v);
+  const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const mix = (a: string, b: string, t: number) => {
+    const A = rgb(a), B = rgb(b);
+    return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`;
+  };
+
+  const svg = document.querySelector<SVGSVGElement>('svg.mark');
+  if (svg) {
+    const $ = <T extends SVGElement>(s: string) => svg.querySelector<T>(s)!;
+    const layers = [...svg.querySelectorAll<SVGRectElement>('.layer')];
+    const sparkles = [...svg.querySelectorAll<SVGPathElement>('.sparkle')];
+    const main = $('.main'), pourer = $('.pourer'), level = $('.pour-level');
+    const pourLiquid = $('.pour-liquid'), stream = $<SVGLineElement>('.stream'), glow = $('.glow');
+
+    const draw = (ms: number) => {
+      const mixT = clamp((ms - COLORS.length * POUR) / MIX);
+      const endT = clamp((ms - COLORS.length * POUR - MIX) / END);
+
+      // Layers in the big glass.
+      layers.forEach((rect, i) => {
+        const u = (ms - i * POUR) / POUR;
+        const h = LAYER * clamp((u - 0.34) / 0.52);
+        rect.setAttribute('y', String(FLOOR - LAYER * i - h));
+        rect.setAttribute('height', String(h > 0 ? h + 0.6 : 0)); // small overlap hides seams
+        rect.setAttribute('fill', mix(COLORS[i], GOLD, ease(clamp(mixT * 1.25))));
+      });
+
+      // The small glass that is currently pouring.
+      const i = Math.floor(ms / POUR);
+      if (i < COLORS.length) {
+        const u = (ms - i * POUR) / POUR;
+        const side = i % 2 === 0 ? -1 : 1; // alternate left / right
+        const px = 100 + side * 9;
+        const slide = side * 26 * (1 - ease(clamp(u / 0.2)));
+        const tilt = 95 * ease(clamp((u - 0.18) / 0.6));
+        pourer.setAttribute('opacity', String(clamp(u / 0.15) * (1 - clamp((u - 0.9) / 0.1))));
+        pourer.setAttribute('transform', `translate(${px + slide} ${PIVOT_Y}) scale(${-side} 1) rotate(${tilt})`);
+        level.setAttribute('transform', `rotate(${-tilt})`); // keeps the liquid surface level
+        pourLiquid.setAttribute('fill', COLORS[i]);
+
+        const surface = FLOOR - LAYER * (i + clamp((u - 0.34) / 0.52));
+        const on = u > 0.3 && u < 0.9;
+        stream.setAttribute('opacity', on ? '1' : '0');
+        stream.setAttribute('stroke', COLORS[i]);
+        stream.setAttribute('x1', String(px));
+        stream.setAttribute('x2', String(px));
+        stream.setAttribute('y1', String(PIVOT_Y + (surface - PIVOT_Y) * clamp((u - 0.82) / 0.08)));
+        stream.setAttribute('y2', String(PIVOT_Y + (surface - PIVOT_Y) * clamp((u - 0.3) / 0.06)));
+      } else {
+        pourer.setAttribute('opacity', '0');
+        stream.setAttribute('opacity', '0');
+      }
+
+      // Swirl the glass, then glow.
+      const swing = 8 * Math.sin(mixT * Math.PI * 7) * (1 - mixT);
+      main.setAttribute('transform', `rotate(${swing} 100 140)`);
+      glow.setAttribute('opacity', String(0.32 * ease(endT)));
+      sparkles.forEach((s, k) => {
+        const p = Math.sin(Math.PI * clamp(endT * 1.6 - k * 0.25));
+        s.setAttribute('opacity', String(p));
+        s.setAttribute('transform', `translate(${s.dataset.x} ${s.dataset.y}) scale(${0.4 + 0.8 * p}) rotate(${45 * endT})`);
+      });
+    };
+
+    let raf = 0;
+    const play = () => {
+      cancelAnimationFrame(raf);
+      const start = performance.now();
+      const tick = (now: number) => {
+        const ms = Math.min(now - start, TOTAL);
+        draw(ms);
+        if (ms < TOTAL) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
+    svg.addEventListener('click', play);
+    // For debugging / screenshots: jump to a moment in ms.
+    (svg as any).seek = (ms: number) => { cancelAnimationFrame(raf); draw(ms); };
+
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) draw(TOTAL);
+    else play();
+  }
+</script>
