@@ -1,10 +1,17 @@
 ---
-// A titled list of posts, grouped by year (the year is printed once per group).
-interface Item {
+// A list of entries (posts or projects). Each row shows a date, title, short
+// description and tags. On desktop, hovering a row shows a small preview card:
+// a live miniature of the page, or an image when one is provided.
+export interface Item {
   title: string;
   href: string;
-  year?: number;
-  note?: string;
+  when?: string;
+  description?: string;
+  tags?: string[];
+  featured?: boolean;
+  external?: boolean;
+  preview?: string; // URL of a page (kind "page") or an image (kind "image")
+  previewKind?: 'page' | 'image';
 }
 interface Props {
   title?: string;
@@ -13,19 +20,101 @@ interface Props {
 const { title, items } = Astro.props;
 ---
 
-<section class="post-list">
+<section class="entries">
   {title && <h2>{title}</h2>}
   <ul>
     {
-      items.map((item, i) => (
-        <li data-title={item.title.toLowerCase()}>
-          <span class="year">{item.year && item.year !== items[i - 1]?.year ? item.year : ''}</span>
-          <span>
-            <a href={item.href}>{item.title}</a>
-            {item.note && <span class="note"> — {item.note}</span>}
-          </span>
+      items.map((item) => (
+        <li data-search={`${item.title} ${item.description ?? ''} ${(item.tags ?? []).join(' ')}`.toLowerCase()}>
+          <a
+            class="entry"
+            href={item.href}
+            data-preview={item.preview}
+            data-preview-kind={item.preview ? (item.previewKind ?? 'page') : undefined}
+            rel={item.external ? 'noopener' : undefined}
+          >
+            <span class="when">{item.when}</span>
+            <span class="body">
+              <span class="title">
+                {item.title}
+                {item.external && <span class="ext" aria-hidden="true"> ↗</span>}
+              </span>
+              {item.description && <span class="desc">{item.description}</span>}
+            </span>
+            <span class="tags">
+              {item.featured && <span class="tag featured">Featured</span>}
+              {(item.tags ?? []).map((t) => <span class="tag">{t}</span>)}
+            </span>
+          </a>
         </li>
       ))
     }
   </ul>
 </section>
+
+<script>
+  // Hover previews. Mouse / trackpad only: on touch screens the row's
+  // description is the preview.
+  if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    const card = document.createElement('div');
+    card.className = 'preview-card';
+    card.setAttribute('aria-hidden', 'true');
+    document.body.append(card);
+
+    const views = new Map<string, HTMLElement>();
+    let timer: number | undefined;
+    let last: MouseEvent | undefined;
+
+    const place = (e: MouseEvent) => {
+      last = e;
+      const w = card.offsetWidth, h = card.offsetHeight, pad = 12;
+      let x = e.clientX + 24;
+      let y = e.clientY + 20;
+      if (x + w + pad > innerWidth) x = e.clientX - w - 24;
+      if (x < pad) x = pad;
+      if (y + h + pad > innerHeight) y = e.clientY - h - 20;
+      if (y < pad) y = pad;
+      card.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+    };
+
+    const show = (a: HTMLAnchorElement) => {
+      const src = a.dataset.preview!;
+      let view = views.get(src);
+      if (!view) {
+        if (a.dataset.previewKind === 'image') {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = '';
+          view = img;
+        } else {
+          const frame = document.createElement('iframe');
+          frame.src = src;
+          frame.tabIndex = -1;
+          frame.setAttribute('scrolling', 'no');
+          view = frame;
+        }
+        views.set(src, view);
+        card.append(view);
+      }
+      views.forEach((v) => (v.hidden = v !== view));
+      card.classList.add('visible');
+      if (last) place(last);
+    };
+
+    const hide = () => {
+      clearTimeout(timer);
+      card.classList.remove('visible');
+    };
+
+    document.querySelectorAll<HTMLAnchorElement>('a.entry[data-preview]').forEach((a) => {
+      a.addEventListener('mouseenter', (e) => {
+        last = e;
+        timer = window.setTimeout(() => show(a), 200);
+      });
+      a.addEventListener('mousemove', place);
+      a.addEventListener('mouseleave', hide);
+    });
+    addEventListener('scroll', hide, { passive: true });
+    addEventListener('pagehide', hide);
+  }
+</script>

@@ -18,17 +18,16 @@ export const site = {
     { label: 'LinkedIn', url: '' },
   ],
 
-  // Home page sections, in order. A post appears in a section when its
-  // frontmatter `categories` list contains the section name.
-  categories: ['Machine Learning', 'Programming', 'Notes'],
-
   // Portfolio. Shown on the home page and on /projects/. Empty list hides both.
+  // `image` is the hover preview: put a screenshot in public/images/ and set
+  // e.g. image: '/images/my-project.png'. Leave it '' for no preview.
   projects: [
     {
       name: 'Example project',
       description: 'Replace this with a one-line description of something you built.',
       url: 'https://github.com/',
       year: 2026,
+      image: '',
     },
   ],
 };

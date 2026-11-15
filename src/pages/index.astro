@@ -3,27 +3,10 @@ import Base from '../layouts/Base.astro';
 import PostList from '../components/PostList.astro';
 import Mark from '../components/Mark.astro';
 import { site } from '../site.config';
-import { getPosts } from '../lib/posts';
+import { getPosts, postItem, projectItems } from '../lib/posts';
 
-const posts = await getPosts();
-const toItem = (p: (typeof posts)[number]) => ({
-  title: p.data.title,
-  href: `/posts/${p.id}/`,
-  year: p.data.date.getUTCFullYear(),
-});
-
-const sections = [
-  { title: 'Featured', items: posts.filter((p) => p.data.featured).map(toItem) },
-  { title: 'Recent', items: posts.slice(0, 6).map(toItem) },
-  ...site.categories.map((c) => ({
-    title: c,
-    items: posts.filter((p) => p.data.categories.includes(c)).map(toItem),
-  })),
-  {
-    title: 'Projects',
-    items: site.projects.map((p) => ({ title: p.name, href: p.url, year: p.year })),
-  },
-].filter((s) => s.items.length > 0);
+const posts = (await getPosts()).map(postItem);
+const projects = projectItems();
 ---
 
 <Base>
@@ -32,10 +15,11 @@ const sections = [
 
     <p class="intro" set:html={site.intro} />
 
-    <input id="search" type="search" placeholder="Search posts…" autocomplete="off" aria-label="Search posts" />
+    <input id="search" type="search" placeholder="Search…" autocomplete="off" aria-label="Search posts and projects" />
 
     <div class="sections">
-      {sections.map((s) => <PostList title={s.title} items={s.items} />)}
+      {posts.length > 0 && <PostList title="Writing" items={posts} />}
+      {projects.length > 0 && <PostList title="Projects" items={projects} />}
     </div>
     <p id="no-results" hidden>Nothing matches that search.</p>
   </div>
@@ -47,10 +31,10 @@ const sections = [
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     let any = false;
-    document.querySelectorAll<HTMLElement>('.sections .post-list').forEach((section) => {
+    document.querySelectorAll<HTMLElement>('.sections .entries').forEach((section) => {
       let shown = 0;
       section.querySelectorAll<HTMLElement>('li').forEach((li) => {
-        const match = !q || li.dataset.title!.includes(q);
+        const match = !q || li.dataset.search!.includes(q);
         li.hidden = !match;
         if (match) shown++;
       });

@@ -1,25 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
-import { site } from '../site.config';
-
-const projects = [...site.projects].sort((a, b) => b.year - a.year);
+import PostList from '../components/PostList.astro';
+import { projectItems } from '../lib/posts';
 ---
 
 <Base title="Projects">
   <div class="page">
     <h1>Projects</h1>
-    <ul class="projects">
-      {
-        projects.map((p) => (
-          <li>
-            <span class="year">{p.year}</span>
-            <div>
-              <a href={p.url}>{p.name}</a>
-              <p>{p.description}</p>
-            </div>
-          </li>
-        ))
-      }
-    </ul>
+    <PostList items={projectItems()} />
   </div>
 </Base>

@@ -67,7 +67,7 @@ a:hover { text-decoration: underline solid; }
 }
 
 /* ---------- home ---------- */
-.home { max-width: 52rem; margin: 0 auto; padding-top: 2.5rem; }
+.home { max-width: 44rem; margin: 0 auto; padding-top: 2.5rem; }
 .home .mark { display: block; margin: 0 auto 2rem; color: var(--fg); }
 .home .intro { max-width: 34rem; margin: 0 auto 2rem; text-align: center; font-weight: bold; }
 #search {
@@ -84,33 +84,83 @@ a:hover { text-decoration: underline solid; }
   outline: none;
 }
 #search:focus { border-color: var(--faint); }
-.sections { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem 3rem; }
+.sections { display: grid; gap: 3rem; }
 #no-results { text-align: center; color: var(--muted); }
 
-.post-list h2 {
-  margin: 0 0 1rem;
+/* ---------- entry lists (posts + projects) ---------- */
+.entries h2 {
+  margin: 0 0 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.post-list ul, .projects { list-style: none; margin: 0; padding: 0; }
-.post-list li, .projects li {
+.entries ul { list-style: none; margin: 0; padding: 0; }
+.entries li + li { border-top: 1px solid var(--border); }
+.entry {
   display: grid;
-  grid-template-columns: 3rem 1fr;
-  margin-bottom: 0.7rem;
-  line-height: 1.4;
+  grid-template-columns: 5.2rem 1fr auto;
+  gap: 0 1rem;
+  align-items: baseline;
+  padding: 0.85rem 0.6rem;
+  margin: 0 -0.6rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 0.12s;
 }
-.year { font-size: 0.8rem; font-weight: bold; padding-top: 0.15em; font-variant-numeric: tabular-nums; }
-.post-list a { text-decoration: underline solid var(--faint); text-decoration-thickness: 1px; }
-.post-list a:hover { text-decoration-color: currentColor; }
-.note { color: var(--muted); }
+.entry:hover, .entry:focus-visible { background: var(--surface); text-decoration: none; }
+.entry .when { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.entry .body { display: grid; gap: 0.15rem; min-width: 0; }
+.entry .title { font-size: 1.05rem; line-height: 1.35; }
+.entry:hover .title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.entry .ext { color: var(--faint); }
+.entry .desc { font-size: 0.88rem; line-height: 1.45; color: var(--muted); }
+.entry .tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.35rem; max-width: 11rem; }
+.tag {
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  white-space: nowrap;
+}
+.tag.featured { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+
+/* Hover preview card (created by PostList's script). */
+.preview-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 340px;
+  height: 213px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+.preview-card.visible { opacity: 1; visibility: visible; }
+.preview-card iframe {
+  width: 1133px;
+  height: 710px;
+  border: 0;
+  transform: scale(0.3);
+  transform-origin: 0 0;
+}
+.preview-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* ---------- simple pages ---------- */
 .page { max-width: var(--measure); margin: 0 auto; padding-top: 2rem; }
 .page h1, .post-header h1 { font-size: 1.78rem; font-weight: normal; line-height: 1.2; }
 .page > h1 { margin: 0 0 2rem; }
-.projects li { margin-bottom: 1.4rem; }
-.projects p { margin: 0.2rem 0 0; color: var(--muted); }
 
 /* ---------- post ---------- */
 .post { max-width: var(--measure); margin: 0 auto; padding-top: 2rem; }
@@ -210,6 +260,7 @@ a:hover { text-decoration: underline solid; }
 
 @media (max-width: 640px) {
   html { font-size: 16px; }
-  .sections { grid-template-columns: 1fr; }
+  .entry { grid-template-columns: 1fr; gap: 0.2rem; }
+  .entry .tags { justify-content: flex-start; max-width: none; margin-top: 0.3rem; }
   .site-header nav { gap: 0.9rem; }
 }

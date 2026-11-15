@@ -9,6 +9,9 @@ const posts = defineCollection({
     date: z.coerce.date(),
     description: z.string().optional(),
     categories: z.array(z.string()).default([]),
+    // Optional preview image shown when hovering the post in a list, e.g. /images/my-post.png.
+    // Without it, the preview is a live miniature of the post itself.
+    image: z.string().optional(),
     featured: z.boolean().default(false),
     draft: z.boolean().default(false),
     toc: z.boolean().default(true),
