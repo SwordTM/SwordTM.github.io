@@ -6,8 +6,8 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
 export default defineConfig({
-  // Change this to your real domain before deploying (used for RSS + sitemap).
-  site: 'https://example.com',
+  // Change this if you move to a custom domain (used for RSS + sitemap).
+  site: 'https://swordtm.github.io',
   integrations: [mdx(), sitemap()],
   markdown: {
     processor: unified({
